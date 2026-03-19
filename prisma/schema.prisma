@@ -1,0 +1,26 @@
+// YJBMOTOCOM ALEGRA - Esquema de base de datos
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                   Int       @id @default(autoincrement())
+  email                String    @unique
+  passwordHash         String
+  name                 String
+  role                 String    @default("sales") // "admin" | "sales"
+  isActive             Boolean   @default(true)
+  failedLoginAttempts  Int       @default(0)
+  lockedUntil          DateTime?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  @@index([email])
+  @@index([isActive])
+}
