@@ -4,12 +4,13 @@
 
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { verifyToken } from '@/lib/auth'
+import { jwtVerify } from 'jose'
+import type { UserSession } from '@/types'
 
 const PUBLIC_PATHS = ['/login', '/api/auth/login']
 const ADMIN_PATHS = ['/usuarios', '/api/usuarios']
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // Permitir rutas públicas
@@ -26,7 +27,16 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
-  const session = verifyToken(token)
+  // Verificar JWT con jose (compatible con Edge Runtime)
+  let session: UserSession | null = null
+  try {
+    const secret = new TextEncoder().encode(process.env.JWT_SECRET!)
+    const { payload } = await jwtVerify(token, secret)
+    session = payload as unknown as UserSession
+  } catch {
+    session = null
+  }
+
   if (!session) {
     if (pathname.startsWith('/api/')) {
       return NextResponse.json({ success: false, error: 'Token inválido' }, { status: 401 })
